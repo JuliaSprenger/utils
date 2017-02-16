@@ -165,24 +165,21 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
             area_dict = self.get_electrodes_by_area()
             electroporated_areas = self.get_electroporation()
-            rcgs = [r for r in block.recordingchannelgroups if r.name == 'all channels']
-            all_rcs = rcgs[0].recordingchannels
+            channel_indexes = [r for r in block.channel_indexes
+                               if r.name == 'all channels']
 
             for area, channels in area_dict.iteritems():
                 electroporated, expression = False, None
                 if area in electroporated_areas.keys():
                     electroporated = True
                     expression = electroporated_areas[area]
-                rcg = ChannelIndex(name='%s channels'%area,
+                    chidx = ChannelIndex(name='%s channels'%area,
                                    channel_indexes=channels,
                                    channel_names=['channel %i'%i for i in channels],
                                    electroporated=electroporated,
                                    expression=expression)
-                for rc in all_rcs:
-                    if rc.analogsignals[0].annotations['electrode_id'] in channels:
-                        rcg.recordingchannels.append(rc)
 
-                block.recordingchannelgroups.append(rcg)
+                    block.channel_indexes.append(chidx)
 
             # raise NotImplementedError('neo block annotation using odmls is not implemented yet.')
 
@@ -271,7 +268,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         # seg.annotations['t_stop'] = max([a.t_stop for a in seg.analogsignalarrays + seg.spiketrains])
 
         # Generate analogsignal classifications
-        for sig in seg.spiketrains + seg.analogsignalarrays:
+        for sig in seg.spiketrains + seg.analogsignals:
             if 'electrode_id' in sig.annotations and sig.annotations['electrode_id']<=32:
                 sig.annotations['signaltype'] = 'neural'
             elif 'electrode_id' in sig.annotations and sig.annotations['electrode_id'] in [32,35]:
@@ -316,10 +313,10 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                     stimtimes = [np.asarray(t['StimulationTimes'])*stimtimeunit - self.parameters_global['t_start'] for t in stim.itervalues()]
 
 
-                    ep = neo.EpochArray(times=start_times,
+                    ep = neo.Epoch(times=start_times,
                                         durations=durations,
                                         labels=labels,
-                                        name='Stimulation epoch array',
+                                        name='Stimulation epoch',
                                         file_origin=self.odML_filename + '.odml',
                                         type="stimulation",
                                         stimtype=stimtype,
@@ -333,7 +330,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                                         stimquality=stimquality,
                                         stimtimes=stimtimes)
 
-                    seg.epocharrays.append(ep)
+                    seg.epochs.append(ep)
                     seg.create_relationship()
 
 
@@ -367,10 +364,10 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                         spindamplitude = [t['SpindleAmplitude'] for t in valid_spindles.itervalues()]
                         spindmaxamplitude = [t['SpindleMaxAmplitude'] for t in valid_spindles.itervalues()]
 
-                        ep = neo.EpochArray(times=start_times,
+                        ep = neo.Epoch(times=start_times,
                                             durations=durations,
                                             labels=labels,
-                                            name='Spindle epoch array',
+                                            name='Spindle epoch',
                                             file_origin=self.odML_filename + '.odml',
                                             type="spindle oscillation",
                                             channel_id = c,
@@ -379,7 +376,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                                             spindamplitude=spindamplitude,
                                             spindmaxamplitude=spindmaxamplitude)
 
-                        seg.epocharrays.append(ep)
+                        seg.epochs.append(ep)
                         seg.create_relationship()
 
         return seg
@@ -508,10 +505,10 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         return temp
 
 ########### Utilities for neo objects ####################################
-def slice_analogsignalarray_by_epochs(anasig,epocharray,pre=0*pq.s,post=0*pq.s,invert=False):
+def slice_analogsignal_by_epochs(anasig,epoch,pre=0*pq.s,post=0*pq.s,invert=False):
     data = []
-    t_starts = epocharray.times - pre
-    t_stops = epocharray.times + epocharray.durations + post
+    t_starts = epoch.times - pre
+    t_stops = epoch.times + epoch.durations + post
 
     # inverting time periods by appending t_start and t_stop of anasig and swapping t_starts and t_stops
     if invert:
