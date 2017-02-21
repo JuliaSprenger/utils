@@ -259,16 +259,32 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         """
 
         # Load neo segment
-        seg = neo.io.NeuralynxIO.read_segment(self,lazy=lazy, cascade=cascade, t_start=t_start, t_stop=t_stop,
-                            electrode_list=electrode_list, units=units, analogsignals=analogsignals,
-                            events=events, waveforms=waveforms)
+        seg = neo.io.NeuralynxIO.read_segment(self,lazy=lazy,
+                                              cascade=cascade,
+                                              t_start=t_start,
+                                              t_stop=t_stop,
+                                              electrode_list=electrode_list,
+                                              units=units,
+                                              analogsignals=analogsignals,
+                                              events=events,
+                                              waveforms=waveforms)
 
         # # Generate t_start and t_stop annotations of segments
         # seg.annotations['t_start'] = min([a.t_start for a in seg.analogsignalarrays + seg.spiketrains])
         # seg.annotations['t_stop'] = max([a.t_stop for a in seg.analogsignalarrays + seg.spiketrains])
 
+        signaltype = []
         # Generate analogsignal classifications
-        for sig in seg.spiketrains + seg.analogsignals:
+        for sig in seg.analogsignals:
+            for channel_idx in sig.get_channel_index():
+                if channel_idx<=32:
+                    signaltype.append('neural')
+                elif channel_idx in [32,35]:
+                    signaltype.append('stimulation')
+                else:
+                    raise TypeError('Signal has unkown channel type (id %s)'%channel_idx)
+
+        for sig in seg.spiketrains:
             if 'electrode_id' in sig.annotations and sig.annotations['electrode_id']<=32:
                 sig.annotations['signaltype'] = 'neural'
             elif 'electrode_id' in sig.annotations and sig.annotations['electrode_id'] in [32,35]:
