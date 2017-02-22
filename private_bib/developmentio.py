@@ -276,13 +276,14 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         signaltype = []
         # Generate analogsignal classifications
         for sig in seg.analogsignals:
-            for channel_idx in sig.get_channel_index():
+            for channel_idx in sig.annotations['channel_index']:
                 if channel_idx<=32:
                     signaltype.append('neural')
                 elif channel_idx in [32,35]:
                     signaltype.append('stimulation')
                 else:
                     raise TypeError('Signal has unkown channel type (id %s)'%channel_idx)
+            sig.annotations['signal_type'] = signaltype
 
         for sig in seg.spiketrains:
             if 'electrode_id' in sig.annotations and sig.annotations['electrode_id']<=32:
