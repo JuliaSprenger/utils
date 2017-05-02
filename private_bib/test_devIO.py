@@ -15,7 +15,8 @@ cachedir = '/home/julia/cache'
 
 IO = DIO.DevelopmentIO(sessiondir=sessiondir,mdatadir=mdatadir,cachedir=cachedir,use_cache='datesize',print_diagnostic=True)
 
-block = IO.read_block(t_starts=0*pq.s,t_stops=30*pq.s,electrode_list=[1],units=None)
+block = IO.read_block(t_starts=0*pq.s,t_stops=30*pq.s,electrode_list=[1],
+                      unit_list=None)
 
 print block
 

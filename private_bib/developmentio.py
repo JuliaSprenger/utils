@@ -98,7 +98,8 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
 
     def read_block(self, lazy=False, cascade=True, t_starts=[None], t_stops=[None],
-                    electrode_list=[], units=[], analogsignals=True, events=False,
+                    electrode_list=[], unit_list=None, analogsignals=True,
+                   events=False,
                     waveforms = False):
         """
         Reads data in a requested time window and returns block with single segment
@@ -118,9 +119,10 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             channel_list : list of integers containing the IDs of the requested
                             to load. If [] all available channels will be loaded.
                             Default: [].
-            units : list of integers containing the IDs of the requested units
-                            to load. If [] all available units will be loaded.
-                            Default: [].
+            unit_list : list of integers containing the IDs of the requested
+                            units to load. If [] all available units will be
+                            loaded.
+                            Default: None.
             events : Loading events. If True all available events in the given
                             time window will be read. Default: False.
             load_waveforms : Load waveform for spikes in the requested time
@@ -137,7 +139,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             NIO = io.NeuralynxIO(session_folder,print_diagnostic = True)
             block = NIO.read_block(lazy = False, cascade = True,
                                    t_starts = 0.1*pq.s, t_stops = 0.2*pq.s,
-                                   channel_list = [1,5,10], units = [1,2,3],
+                                   channel_list = [1,5,10], unit_list = [1,2,3],
                                    events = True, load_waveforms = True)
         """
 
@@ -146,7 +148,8 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         # Load neo block
         block = neo.io.NeuralynxIO.read_block(self, lazy=lazy, cascade=cascade,
                                        t_starts=t_starts, t_stops=t_stops,
-                                       electrode_list=electrode_list, units=units,
+                                       electrode_list=electrode_list,
+                                       unit_list=unit_list,
                                        analogsignals=analogsignals,
                                        events=events, waveforms=waveforms)
 
@@ -224,7 +227,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
 
     def read_segment(self,lazy=False, cascade=True, t_start=None, t_stop=None,
-                        electrode_list=[], units=[], analogsignals=True,
+                        electrode_list=[], unit_list=None, analogsignals=True,
                         events=False, waveforms=False):
         """Reads one Segment.
 
@@ -243,9 +246,10 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             electrode_list : list of integers containing the IDs of the requested
                             to load. If [] all available channels will be loaded.
                             Default: [].
-            units : list of integers containing the IDs of the requested units
-                            to load. If [] all available units will be loaded.
-                            Default: [].
+            unit_list : list of integers containing the IDs of the requested
+                            units to load. If [] all available units will be
+                            loaded.
+                            Default: None.
             analogsignals : boolean, indication whether analogsignals should be
                             read. Default: True.
             events : Loading events. If True all available events in the given
@@ -264,7 +268,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                                               t_start=t_start,
                                               t_stop=t_stop,
                                               electrode_list=electrode_list,
-                                              units=units,
+                                              unit_list=unit_list,
                                               analogsignals=analogsignals,
                                               events=events,
                                               waveforms=waveforms)
