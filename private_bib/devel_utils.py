@@ -391,7 +391,8 @@ def make_movie(sessiondir,savefigdir,mdatadir=None,t_starts=None,t_stops=None,**
 
 
     print 'Loading data...'
-    block = IO.read_block(t_starts=t_starts,t_stops=t_stops,electrode_list=[],units=None)
+    block = IO.read_block(t_starts=t_starts,t_stops=t_stops,electrode_list=[],
+                          unit_list=None)
     print 'Completed data loading.'
 
     if 'spikesort' in kwargs:
@@ -399,6 +400,8 @@ def make_movie(sessiondir,savefigdir,mdatadir=None,t_starts=None,t_stops=None,**
             # loading spike sorting data
             try:
                 print 'Trying to load sorted spikes.'
+                print('WARNING, not using saved data. Correct this here!')
+                raise ValueError()
                 block = spikesort.load_spikesort(block,sessiondir=sessiondir,
                                                  sortdir= ut.get_sort_location(session),
                                                  mdatadir= ut.get_metadata_location(session),
