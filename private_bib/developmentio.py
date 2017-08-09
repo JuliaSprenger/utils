@@ -181,7 +181,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                                    channel_names=['channel %i'%i for i in channels],
                                    electroporated=electroporated,
                                    expression=expression)
-
+                    chidx.block = block
                     block.channel_indexes.append(chidx)
 
             # raise NotImplementedError('neo block annotation using odmls is not implemented yet.')
@@ -399,7 +399,6 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
                         seg.epochs.append(ep)
                         seg.create_relationship()
-
         return seg
 
 
