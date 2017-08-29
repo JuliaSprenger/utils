@@ -177,6 +177,8 @@ def save_spikesorting(savedir, block, sorting_hash):
                 # TODO: Remove this quickfix once neo nixio is fixed
                 st.left_sweep = [st.left_sweep.rescale('s').magnitude]*pq.s
                 st.sampling_rate = st.sampling_rate.rescale('Hz')
+                if st.annotations['invalid_waveforms'] == []:
+                    st.annotations['invalid_waveforms'] = 0
                 ########################
 
                 st.unit = unit
@@ -189,7 +191,7 @@ def save_spikesorting(savedir, block, sorting_hash):
 
 
 def load_spikesort(block, session, sorting_dir, parameter_dict,
-                   sort=True, electrode_list='all'):
+                   electrode_list='all'):
     """
     :param load_from:
     :param block:
@@ -250,6 +252,13 @@ def load_spikesort(block, session, sorting_dir, parameter_dict,
                 duplicated_unit.spiketrains.append(duplicated_st)
                 seg.spiketrains.append(duplicated_st)
                 duplicated_st.segment = seg
+
+                ############ Fix for issue
+                # https://github.com/NeuralEnsemble/python-neo/issues/373
+                if duplicated_st.waveforms.shape == (0,):
+                    duplicated_st.waveforms = \
+                        duplicated_st.waveforms.reshape((0,0,0))
+                ################
 
 
         if electrode_list != 'all':
