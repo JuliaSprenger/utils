@@ -5,23 +5,26 @@ import quantities as pq
 import numpy as np
 import neo
 import elephant
+import neo_utils
 import private_bib.developmentio as DIO
 
 
-settings = {'sessiondir':'/home/julia/data/SPP/data/2015-02-03_14-22-50',
-       # 'sessiondir': '/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/data/2015-02-20_10-19-03',
-       'sortdir': '/home/julia/projects/SPP1665/analysis/spikesortings',
-       'mdatadir': '/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/metadata',
-       'cachedir': '/home/julia/cache'}
-
-software = 'phy'
-method = ''
-waveforms = True
-sort = True
-parameter_dict = {'keep_temp_files':True,'num_cpus': 2,'threshold_strong_std_factor':6,'threshold_weak_std_factor':3}#{'threshold': 5.0}
-all_channels_at_once = True
-starts = 0*pq.s
-stops = 1*pq.min
+# settings = {'sessiondir':'/home/julia/data/SPP/data/2015-02-03_14-22-50',
+#        # 'sessiondir': '/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/data/2015-02-20_10-19-03',
+#        'sortdir': '/home/julia/projects/SPP1665/analysis/spikesortings',
+#        'mdatadir': '/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/metadata',
+#        'cachedir': '/home/julia/cache'}
+#
+# software = 'phy'
+# method = ''
+# waveforms = True
+# sort = True
+# # parameter_dict = {'keep_temp_files':True , 'num_cpus': 2,
+# #                   'threshold_strong_std_factor':6,
+# #                   'threshold_weak_std_factor':3}#{'threshold': 5.0}
+# all_channels_at_once = True
+# starts = 0*pq.s
+# stops = 1*pq.min
 
 
 
@@ -413,9 +416,67 @@ def load_spikesort(block, session, sorting_dir, parameter_dict,
 #     return block
 
 
+def get_sorting(IO, block, sorter, sorting_dir, ellist):
+
+    # try to load spiketrains for each electrode individually
+    for elid in ellist:
+        try:
+            load_spikesort(block=block,
+                             session=os.path.basename(block.file_origin),
+                             sorting_dir=sorting_dir,
+                             parameter_dict=sorter.parameter_dict,
+                             electrode_list=[elid])
+        except (ValueError, IOError) as e:
+            messages = ['File does not exist!',
+                        'No spike sorting found',
+                        'Can not load spiketrain for electrode ids']
+
+            if any([msg in e.message for msg in messages]):
+                generate_new_sorting(IO,block,elid, sorter,
+                                    sorting_dir, block.annotations['filename'])
+            else:
+                raise e
+
+def generate_new_sorting(IO, block, electrode_id, sorter, sorting_dir,
+                        filename):
+    print('Generating new spikes for electrode {}'.format(electrode_id))
+    print 'Reading full data block...'
+    # global block
+    # loading electrode-wise for memory reasons
+    t_starts, t_stops = [], []
+    for seg in block.segments:
+        t_starts.append(seg.t_start)
+        t_stops.append(seg.t_stop)
+    anasig_block = IO.read_block(t_starts=t_stops, t_stops=t_stops,
+                                 analogsignals=True,
+                                 electrode_list=[electrode_id],
+                                 unit_list=None)
+
+    neo_utils.check_neo_compliant(anasig_block)
+
+    print 'Finished reading analogsignal block'
+    sorter.sort_block(anasig_block)
+
+    # neo_utils.check_neo_compliant(anasig_block)
+
+    save_spike_dir = os.path.join(sorting_dir, filename)
+    sorting_hash = sorter.sorting_hash
+    save_spikesorting(save_spike_dir,
+                                            anasig_block,
+                                            sorting_hash)
+    neo_utils.check_neo_compliant(anasig_block)
+
+    # loading generated spikes
+    load_spikesort(block=block, session=filename,
+                     sort=False,
+                     sorting_dir=sorting_dir,
+                     parameter_dict=sorter.parameters,
+                     electrode_list=[electrode_id])
+    neo_utils.check_neo_compliant(block)
+
+
 
 if __name__ == '__main__':
-
-    spikesorting()
+    # spikesorting()
 
     pass
