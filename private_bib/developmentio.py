@@ -97,8 +97,8 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
 
 
-    def read_block(self, lazy=False, cascade=True, t_starts=[None], t_stops=[None],
-                    electrode_list=[], unit_list=None, analogsignals=True,
+    def read_block(self, lazy=False, cascade=True, t_starts=None, t_stops=None,
+                    electrode_list=None, unit_list=None, analogsignals=True,
                    events=False,
                     waveforms = False):
         """
@@ -111,14 +111,15 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                             Default 'True'.
             t_starts : list of quantities or quantity describing the start of the
                             requested time window to load. If None or [None]
-                            the complete session is loaded. Default '[None]'.
+                            the complete session is loaded. Default 'None'.
             t_stops : list of quantities or quantity describing the end of the
                             requested time window to load. Has to contain the
                             same number of values as t_starts. If None or [None]
-                            the complete session is loaded. Default '[None]'.
-            channel_list : list of integers containing the IDs of the requested
-                            to load. If [] all available channels will be loaded.
-                            Default: [].
+                            the complete session is loaded. Default 'None'.
+            electrode_list : list of integers containing the IDs of the requested
+                            units to load. If [] or None all available units
+                            will be loaded. If False, no unit will be loaded.
+                            Default: None.
             unit_list : list of integers containing the IDs of the requested
                             units to load. If [] all available units will be
                             loaded.
@@ -227,8 +228,8 @@ class DevelopmentIO(neo.io.NeuralynxIO):
 
 
     def read_segment(self,lazy=False, cascade=True, t_start=None, t_stop=None,
-                        electrode_list=[], unit_list=None, analogsignals=True,
-                        events=False, waveforms=False):
+                     electrode_list=None, unit_list=None, analogsignals=True,
+                     events=False, waveforms=False):
         """Reads one Segment.
 
         The Segment will contain one AnalogSignalArray for each channel
@@ -244,8 +245,9 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             t_start : time (quantity) that the Segment begins. Default None.
             t_stop : time (quantity) that the Segment ends. Default None.
             electrode_list : list of integers containing the IDs of the requested
-                            to load. If [] all available channels will be loaded.
-                            Default: [].
+                            units to load. If [] or None all available units
+                            will be loaded. If False, no unit will be loaded.
+                            Default: None.
             unit_list : list of integers containing the IDs of the requested
                             units to load. If [] all available units will be
                             loaded.
