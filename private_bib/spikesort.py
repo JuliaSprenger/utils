@@ -6,7 +6,7 @@ import numpy as np
 import neo
 import elephant
 import neo_utils
-import private_bib.developmentio as DIO
+import developmentio as DIO
 
 
 # settings = {'sessiondir':'/home/julia/data/SPP/data/2015-02-03_14-22-50',
@@ -102,16 +102,24 @@ import private_bib.developmentio as DIO
 #                       sorting_hash=extractor.sorting_hash)
 
 
-def save_spikesorting(savedir, block, sorting_hash):
+def save_spikesorting(sorting_file, block, sorting_hash=None,
+                      parameter_dict=None):
     """
     :param savedir:
     :param block:
     :return:
     """
 
-    filename = savedir + '_spikesorting.hdf5'
-    print 'Saving sorted spikes (sorting hash {}) at {}'.format(sorting_hash,
-                                                                filename)
+    if parameter_dict is None and sorting_hash is None:
+        raise ValueError('Please provide either a parameter dictionary or a '
+                         'sorting hash to specify the sorting you want to '
+                         'load.')
+    elif parameter_dict is not None:
+        sorting_hash = elephant.spike_sorting.SpikeSorter.get_sorting_hash(parameter_dict)
+
+    filename = sorting_file + '_spikesorting.hdf5'
+    print('Saving sorted spikes (sorting hash {}) at {}'
+          ''.format(sorting_hash, filename))
 
     sorting_chidx = [i for i in block.channel_indexes if
                      ('sorting_hash' in i.annotations
@@ -149,7 +157,7 @@ def save_spikesorting(savedir, block, sorting_hash):
                 chidx = chidx_i
                 break
         if chidx is None:
-            chidx = neo.ChannelIndex([0], name='spike sorting',
+            chidx = neo.ChannelIndex([-1], name='spike sorting',
                                      sorting_hash=sorting_hash)
             chidx.block = nix_block
             nix_block.channel_indexes.append(chidx)
@@ -178,9 +186,11 @@ def save_spikesorting(savedir, block, sorting_hash):
                 # st_new.segment = seg
 
                 # TODO: Remove this quickfix once neo nixio is fixed
-                st.left_sweep = [st.left_sweep.rescale('s').magnitude]*pq.s
+                if st.left_sweep:
+                    st.left_sweep = [st.left_sweep.rescale('s').magnitude]*pq.s
                 st.sampling_rate = st.sampling_rate.rescale('Hz')
-                if st.annotations['invalid_waveforms'] == []:
+                if ('invalid_waveforms' in st.annotations
+                    and st.annotations['invalid_waveforms'] == []):
                     st.annotations['invalid_waveforms'] = 0
                 ########################
 
@@ -193,18 +203,22 @@ def save_spikesorting(savedir, block, sorting_hash):
         nix_file.write_block(nix_block)
 
 
-def load_spikesort(block, session, sorting_dir, parameter_dict,
-                   electrode_list='all'):
+def load_spikesorting(block, sorting_file, parameter_dict=None,
+                      sorting_hash=None, electrode_list='all'):
     """
     :param load_from:
     :param block:
     :return:
     """
 
-    # corr_annotations = {'sorted':sort,'parameters':elephant.spike_sorting.get_updated_parameters(software, parameter_dict)}
-    sorting_hash = elephant.spike_sorting.SpikeSorter.get_sorting_hash(parameter_dict)
+    if parameter_dict is None and sorting_hash is None:
+        raise ValueError('Please provide either a parameter dictionary or a '
+                         'sorting hash to specify the sorting you want to '
+                         'load.')
+    elif parameter_dict is not None:
+        sorting_hash = elephant.spike_sorting.SpikeSorter.get_sorting_hash(parameter_dict)
 
-    filename = os.path.join(sorting_dir, session + '_spikesorting.hdf5')
+    filename = sorting_file +'_spikesorting.hdf5'
     if not os.path.exists(filename):
         raise IOError('File does not exist!')
 
@@ -417,61 +431,64 @@ def load_spikesort(block, session, sorting_dir, parameter_dict,
 
 
 def get_sorting(IO, block, sorter, sorting_dir, ellist):
-
     # try to load spiketrains for each electrode individually
+    filename = os.path.basename(block.file_origin)
     for elid in ellist:
         try:
-            load_spikesort(block=block,
-                             session=os.path.basename(block.file_origin),
-                             sorting_dir=sorting_dir,
-                             parameter_dict=sorter.parameter_dict,
-                             electrode_list=[elid])
+            load_spikesorting(block=block,
+                              session=filename,
+                              sorting_dir=sorting_dir,
+                              parameter_dict=sorter.parameter_dict,
+                              electrode_list=[elid])
         except (ValueError, IOError) as e:
             messages = ['File does not exist!',
                         'No spike sorting found',
                         'Can not load spiketrain for electrode ids']
 
             if any([msg in e.message for msg in messages]):
-                generate_new_sorting(IO,block,elid, sorter,
-                                    sorting_dir, block.annotations['filename'])
+                generate_new_sorting(IO, block, elid, sorter,
+                                     sorting_dir, filename)
             else:
                 raise e
 
 def generate_new_sorting(IO, block, electrode_id, sorter, sorting_dir,
                         filename):
     print('Generating new spikes for electrode {}'.format(electrode_id))
-    print 'Reading full data block...'
+    print('Reading full data block...')
     # global block
     # loading electrode-wise for memory reasons
     t_starts, t_stops = [], []
-    for seg in block.segments:
+    for seg_id, seg in enumerate(block.segments):
+        if seg.t_start == seg.t_stop:
+            print('WARNING: segment {} ({}/{}) has same start and stop time {' \
+                  '}'.format(seg, seg_id, len(block.segments)-1, seg.t_start))
+            continue
         t_starts.append(seg.t_start)
         t_stops.append(seg.t_stop)
-    anasig_block = IO.read_block(t_starts=t_stops, t_stops=t_stops,
+    print(t_starts)
+    print(t_stops)
+    anasig_block = IO.read_block(t_starts=t_starts, t_stops=t_stops,
                                  analogsignals=True,
                                  electrode_list=[electrode_id],
                                  unit_list=None)
 
     neo_utils.check_neo_compliant(anasig_block)
 
-    print 'Finished reading analogsignal block'
+    print('Finished reading analogsignal block')
     sorter.sort_block(anasig_block)
 
     # neo_utils.check_neo_compliant(anasig_block)
 
     save_spike_dir = os.path.join(sorting_dir, filename)
     sorting_hash = sorter.sorting_hash
-    save_spikesorting(save_spike_dir,
-                                            anasig_block,
-                                            sorting_hash)
+    save_spikesorting(save_spike_dir, anasig_block, sorting_hash)
     neo_utils.check_neo_compliant(anasig_block)
 
     # loading generated spikes
-    load_spikesort(block=block, session=filename,
-                     sort=False,
-                     sorting_dir=sorting_dir,
-                     parameter_dict=sorter.parameters,
-                     electrode_list=[electrode_id])
+    load_spikesorting(block=block, session=filename,
+                      sorting_dir=sorting_dir,
+                      parameter_dict=sorter.parameter_dict,
+                      electrode_list=[electrode_id])
     neo_utils.check_neo_compliant(block)
 
 

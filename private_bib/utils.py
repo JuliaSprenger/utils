@@ -24,7 +24,7 @@ elif os.path.isdir('/users/sprenger/python/modules'):
 elif os.path.isdir('/home/j.sprenger'):
     local = 'blaustein'
 
-print 'Working on data saved at %s'%local
+print('Working on data saved at {}'.format(local))
 
 spp_struct = re.compile('.{4}-.{2}-.{2}_.{2}-.{2}-.{2}')
 
