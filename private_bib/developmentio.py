@@ -265,7 +265,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
         """
 
         # Load neo segment
-        seg = neo.io.NeuralynxIO.read_segment(self,lazy=lazy,
+        seg = neo.io.NeuralynxIO.read_segment(self, lazy=lazy,
                                               cascade=cascade,
                                               t_start=t_start,
                                               t_stop=t_stop,
