@@ -70,8 +70,8 @@ paths = {'laptop':{'hamburg':{'data':'/home/julia/data/SPP/data',
 #                         'blaustein':'/home/j.sprenger/data/marseille/data'}}
 
 
-
-monkey_translator = {'l':'Lilou','n':'Nikos','i':'Nikos2','t':'Tanya','s':'Sana'}
+monkey_translator = {'l': 'Lilou', 'n': 'Nikos', 'i': 'Nikos2', 't': 'Tanya',
+                     's': 'Sana', 'a': 'Tanya2', 'e': 'Enya'}
 
 def get_data_location(filename=None):
     group = 'hamburg' if spp_struct.match(filename) else 'marseille'
