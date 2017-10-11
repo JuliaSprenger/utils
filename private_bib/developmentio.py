@@ -172,7 +172,7 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             channel_indexes = [r for r in block.channel_indexes
                                if r.name == 'all channels']
 
-            for area, channels in area_dict.iteritems():
+            for area, channels in area_dict.items():
                 electroporated, expression = False, None
                 if area in electroporated_areas.keys():
                     electroporated = True
@@ -313,27 +313,27 @@ class DevelopmentIO(neo.io.NeuralynxIO):
                 s_stop = seg.t_stop if seg.t_stop else self.parameters_global['t_stop'] - self.parameters_global['t_start']
 
                 # Add only stimulations which are completely in the current segment
-                stim = {k:v for k,v in stimulations.iteritems() if v['StimulationPeriodEnd']-self.parameters_global['t_start'] >s_start and v['StimulationPeriodStart']-self.parameters_global['t_start']<s_stop}
+                stim = {k:v for k,v in stimulations.items() if v['StimulationPeriodEnd']-self.parameters_global['t_start'] >s_start and v['StimulationPeriodStart']-self.parameters_global['t_start']<s_stop}
 
-                start_times = [t['StimulationPeriodStart']-self.parameters_global['t_start'] for t in stim.itervalues()]
-                durations = [t['StimulationPeriodEnd'] - t['StimulationPeriodStart'] for t in stim.itervalues()]
+                start_times = [t['StimulationPeriodStart']-self.parameters_global['t_start'] for t in stim.values()]
+                durations = [t['StimulationPeriodEnd'] - t['StimulationPeriodStart'] for t in stim.values()]
 
                 if len(durations)>0 and len(start_times)>0:
                     start_times = pq.Quantity([t.rescale(start_times[0].units) for t in start_times],start_times[0].units)
                     durations = pq.Quantity([d.rescale(durations[0].units) for d in durations],durations[0].units)
 
-                    labels = ['Stimulationperiod ' + str(i) for i in stim.iterkeys()]
-                    stimtype = [t['StimulationType'] for t in stim.itervalues()]
-                    stimfreq = [t['StimulusFrequency'] if 'StimulusFrequency' in t else None for t in stim.itervalues()]
-                    stimpulseduration = [t['PulseDuration'] if 'PulseDuration' in t else None for t in stim.itervalues()]
-                    stim_count = [t['N_Stimuli'] for t in stim.itervalues()]
-                    stimoutput = [t['LaserOutput'] for t in stim.itervalues()]
-                    stimpower = [t['LaserPower'] for t in stim.itervalues()]
-                    stimquality = [t['StimulationQuality'] for t in stim.itervalues()]
-                    # stimtimeunits = [t['StimulationTimes'][0].units if type(t['StimulationTimes'])==list else t['StimulationTimes'].units for t in stim.itervalues()]
-                    stimtimeunit = stim.values()[0]['StimulationTimes'][0].units
+                    labels = ['Stimulationperiod ' + str(i) for i in list(stim)]
+                    stimtype = [t['StimulationType'] for t in stim.values()]
+                    stimfreq = [t['StimulusFrequency'] if 'StimulusFrequency' in t else None for t in stim.values()]
+                    stimpulseduration = [t['PulseDuration'] if 'PulseDuration' in t else None for t in stim.values()]
+                    stim_count = [t['N_Stimuli'] for t in stim.values()]
+                    stimoutput = [t['LaserOutput'] for t in stim.values()]
+                    stimpower = [t['LaserPower'] for t in stim.values()]
+                    stimquality = [t['StimulationQuality'] for t in stim.values()]
+                    # stimtimeunits = [t['StimulationTimes'][0].units if type(t['StimulationTimes'])==list else t['StimulationTimes'].units for t in stim.values()]
+                    stimtimeunit = list(stim.values())[0]['StimulationTimes'][0].units
 
-                    stimtimes = [np.asarray(t['StimulationTimes'])*stimtimeunit - self.parameters_global['t_start'] for t in stim.itervalues()]
+                    stimtimes = [np.asarray(t['StimulationTimes'])*stimtimeunit - self.parameters_global['t_start'] for t in stim.values()]
 
 
                     ep = neo.Epoch(times=start_times,
@@ -365,27 +365,28 @@ class DevelopmentIO(neo.io.NeuralynxIO):
             s_start = seg.t_start
             s_stop = seg.t_stop
             # Add only spindles which are contained in the current segment # if (spindle['SpindleEnd']-self.parameters_global['t_start']>s_start) and (spindle['SpindleStart']-self.parameters_global['t_start']<s_stop)
-            # stim = {p:{c:{s:spindle for s,spindle in channel.iteritems() if (spindle['SpindleEnd']-self.parameters_global['t_start']>s_start) and (spindle['SpindleStart']-self.parameters_global['t_start']<s_stop)} for c,channel in period.iteritems()} for p,period in spindledet.iteritems()}
+            # stim = {p:{c:{s:spindle for s,spindle in channel.items() if (spindle['SpindleEnd']-self.parameters_global['t_start']>s_start) and (spindle['SpindleStart']-self.parameters_global['t_start']<s_stop)} for c,channel in period.items()} for p,period in spindledet.items()}
 
             # convert spindle to
-            for p,period in spindledet.iteritems():
-                for c,channel in period.iteritems():
+            for p,period in spindledet.items():
+                for c,channel in period.items():
                     valid_spindles = {}
-                    for s, spindle in channel.iteritems():
+                    for s, spindle in channel.items():
                         if type(s)==int and (spindle['SpindleEnd']-self.parameters_global['t_start']>s_start) and (spindle['SpindleStart']-self.parameters_global['t_start']<s_stop):
                             valid_spindles.update({s:spindle})
 
                     if len(valid_spindles.keys())>0:
 
 
-                        start_times = [t['SpindleStart']-self.parameters_global['t_start'] for t in valid_spindles.itervalues()]
+                        start_times = [t['SpindleStart']-self.parameters_global['t_start'] for t in valid_spindles.values()]
                         start_times = pq.Quantity([t.rescale(start_times[0].units) for t in start_times],start_times[0].units)
-                        durations = [t['SpindleEnd'] - t['SpindleStart'] for t in valid_spindles.itervalues()]
+                        durations = [t['SpindleEnd'] - t['SpindleStart'] for t in valid_spindles.values()]
                         durations = pq.Quantity([d.rescale(durations[0].units) for d in durations],durations[0].units)
                         
-                        labels = ['Spindleperiod %i in channel %i in time period %s'%(i,c,p) for i in valid_spindles.iterkeys()]
-                        spindamplitude = [t['SpindleAmplitude'] for t in valid_spindles.itervalues()]
-                        spindmaxamplitude = [t['SpindleMaxAmplitude'] for t in valid_spindles.itervalues()]
+                        labels = ['Spindleperiod %i in channel %i in time ' \
+                                  'period %s'%(i,c,p) for i in list(valid_spindles)]
+                        spindamplitude = [t['SpindleAmplitude'] for t in valid_spindles.values()]
+                        spindmaxamplitude = [t['SpindleMaxAmplitude'] for t in valid_spindles.values()]
 
                         ep = neo.Epoch(times=start_times,
                                             durations=durations,

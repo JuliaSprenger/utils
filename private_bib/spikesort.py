@@ -54,8 +54,7 @@ def spikesort_session(session=None):
             use_cache='datesize',
             print_diagnostic=False)
 
-        chids = range(1,33) #TODO: This should not be hardcoded here! Better
-        # use available channel ids provided by IO
+        chids = sorted(IO.parameters_ncs.keys())
         for chid in chids:
             print('Ch{}'.format(chid))
             block = IO.read_block(t_starts=None, t_stops=None,
@@ -172,6 +171,10 @@ def save_spikesorting(sorting_file, block, sorting_hash=None,
         if chidx is None:
             chidx = neo.ChannelIndex([-1], name='spike sorting',
                                      sorting_hash=sorting_hash)
+            for anno in ['sorter', 'sorting_parameters']:
+                if anno in sorting_chidx.annotations:
+                    chidx.annotations[anno] = sorting_chidx.annotations[anno]
+
             chidx.block = nix_block
             nix_block.channel_indexes.append(chidx)
 
@@ -302,14 +305,13 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
     return block
 
 
-def get_sorting(IO, block, sorter, sorting_dir, ellist):
+def get_sorting(IO, block, sorter, sorting_file, ellist):
     # try to load spiketrains for each electrode individually
     filename = os.path.basename(block.file_origin)
     for elid in ellist:
         try:
             load_spikesorting(block=block,
-                              session=filename,
-                              sorting_dir=sorting_dir,
+                              sorting_file=sorting_file,
                               parameter_dict=sorter.parameter_dict,
                               electrode_list=[elid])
         except (ValueError, IOError) as e:
@@ -317,14 +319,16 @@ def get_sorting(IO, block, sorter, sorting_dir, ellist):
                         'No spike sorting found',
                         'Can not load spiketrain for electrode ids']
 
-            if any([msg in e.message for msg in messages]):
+            if (hasattr(e, 'message') and any([msg in e.message for msg in
+                                               messages])) \
+                or any([msg in e.args[0] for msg in  messages]):
                 generate_new_sorting(IO, block, elid, sorter,
-                                     sorting_dir, filename)
+                                     sorting_file, filename)
             else:
                 raise e
 
 
-def generate_new_sorting(IO, block, electrode_id, sorter, sorting_dir,
+def generate_new_sorting(IO, block, electrode_id, sorter, sorting_file,
                         filename):
     print('Generating new spikes for electrode {}'.format(electrode_id))
     print('Reading full data block...')
@@ -352,25 +356,21 @@ def generate_new_sorting(IO, block, electrode_id, sorter, sorting_dir,
 
     # neo_utils.check_neo_compliant(anasig_block)
 
-    save_spike_dir = os.path.join(sorting_dir, filename)
+    save_spike_dir = os.path.join(sorting_file)
     sorting_hash = sorter.sorting_hash
     save_spikesorting(save_spike_dir, anasig_block, sorting_hash)
     neo_utils.check_neo_compliant(anasig_block)
 
     # loading generated spikes
-    load_spikesorting(block=block, session=filename,
-                      sorting_dir=sorting_dir,
+    load_spikesorting(block=block, sorting_file=sorting_file,
                       parameter_dict=sorter.parameter_dict,
                       electrode_list=[electrode_id])
     neo_utils.check_neo_compliant(block)
 
 
 if __name__ == '__main__':
-    print('Main!')
     session = None
-    if len(sys.argv)>1:
+    if len(sys.argv) > 1:
         session = sys.argv[1]
-
-    print(sys.path)
 
     spikesort_session(session)
