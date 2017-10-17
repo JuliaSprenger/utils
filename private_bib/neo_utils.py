@@ -885,9 +885,12 @@ def _get_valid_labels(obj, valid_ids):
                 selected_labels.append(labels[vid])
             # sparse_labels = sparse_labels[valid_ids]
         else:
-            warnings.warn('Can not filter object labels. Shape (%s) does not '
-                          'fit object shape (%s)'
-                          '' % (labels.shape, obj.shape))
+            if hasattr(labels,'shape'):
+                warnings.warn('Can not filter object labels. Shape (%s) does not '
+                              'fit object shape (%s)'
+                              '' % (labels.shape, obj.shape))
+            else:
+                warnings.warn('Can not filter object labels.')
     return np.array(selected_labels)
 
 
