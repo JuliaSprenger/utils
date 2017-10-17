@@ -305,6 +305,8 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
     return block
 
 
+
+
 def get_sorting(IO, block, sorter, sorting_file, ellist):
     # try to load spiketrains for each electrode individually
     filename = os.path.basename(block.file_origin)
@@ -326,6 +328,24 @@ def get_sorting(IO, block, sorter, sorting_file, ellist):
                                      sorting_file, filename)
             else:
                 raise e
+
+
+def get_avail_sortings(sorting_file):
+    filename = sorting_file +'_spikesorting.hdf5'
+    if not os.path.exists(filename):
+        raise IOError('{} does not exist!'.format(filename))
+
+    print('Attempting to load sorting versions from {}...'
+          ''.format(filename))
+    with neo.io.NixIO(filename, 'ro') as nix_file:
+        nix_block = nix_file.read_block(lazy=True)
+    if nix_block is not None:
+        hashes = [c.annotations['sorting_hash'] for c in
+                  nix_block.channel_indexes]
+        parameters = [c.annotations['sorting_parameters'] for c in
+                  nix_block.channel_indexes
+                      if 'sorting_parameters' in c.annotations]
+    return hashes, parameters
 
 
 def generate_new_sorting(IO, block, electrode_id, sorter, sorting_file,
