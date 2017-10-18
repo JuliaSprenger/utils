@@ -280,6 +280,7 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
                 continue
 
             duplicated_unit = copy.deepcopy(unit)
+            duplicated_unit.spiketrains = []
             duplicated_unit.channel_index = sorted_chidx
             sorted_chidx.units.append(duplicated_unit)
             duplicated_units.append(duplicated_unit)
