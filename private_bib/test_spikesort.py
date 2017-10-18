@@ -2,15 +2,17 @@ import unittest
 import os.path
 import numpy as np
 import quantities as pq
-from neo import Block, SpikeTrain, ChannelIndex, Unit
+from neo import Block, SpikeTrain, ChannelIndex, Unit, Segment
 import elephant.spike_sorting
-from spikesort import load_spikesorting, save_spikesorting
+from private_bib.spikesort import load_spikesorting, save_spikesorting
 
 def default_data(block=None, n_chidx=1, n_units=1):
 
     # generate new block if none provided, otherwise attach to provided block
     if block is None:
         block = Block()
+    if not block.segments:
+        block.segments = [Segment()]
 
     for id in range(n_chidx):
         sorting_hash = elephant.spike_sorting.SpikeSorter.get_sorting_hash({
@@ -31,7 +33,9 @@ def default_data(block=None, n_chidx=1, n_units=1):
                                 t_start=0 * pq.s,
                                 t_stop=st_id * pq.s, spiketrain_id=st_id)
                 unit.spiketrains.append(st)
+                block.segments[0].append(st)
                 st.unit = unit
+                st.segment = block.segments[0]
 
     block.create_relationship()
     return block
@@ -57,7 +61,7 @@ class SpikeSaveLoadTestCase(unittest.TestCase):
                           sorting_hash=self.sorting_hash)
 
         self.object_classes = ['ChannelIndex', 'Unit', 'SpikeTrain', 'Segment',
-                          'AnalogSignal']
+                               'AnalogSignal']
 
     def test_data_exist(self):
         for obj_class in self.object_classes:
@@ -81,9 +85,11 @@ class SpikeSaveLoadTestCase(unittest.TestCase):
             new_objs = self.new_block.list_children_by_class(obj_class)
             for id in range(len(old_objs)):
                 if hasattr(old_objs[id],'index'):
-                    np.testing.assert_array_equal(old_objs[id].index, new_objs[id].index)
+                    np.testing.assert_array_equal(old_objs[id].index,
+                                                  new_objs[id].index)
                 if hasattr(old_objs[id],'times'):
-                    np.testing.assert_array_equal(old_objs[id].times, new_objs[id].times)
+                    np.testing.assert_array_equal(old_objs[id].times,
+                                                  new_objs[id].times)
 
 
 

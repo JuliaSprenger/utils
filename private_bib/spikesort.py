@@ -262,9 +262,14 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
     elif len(sorted_chidx)==1:
         sorted_chidx = sorted_chidx[0]
     else:
+        #TODO: Problem: this reduced spiketrains to quantities
         sorted_chidx = copy.deepcopy(nix_sorted_chidx)
+        sorted_chidx.units = []
         sorted_chidx.block = block
         block.channel_indexes.append(sorted_chidx)
+
+    if not block.segments:
+        block.segments = [neo.Segment()]
 
     for seg in block.segments:
         tstart, tstop = seg.t_start, seg.t_stop
