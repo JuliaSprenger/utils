@@ -22,9 +22,9 @@ def default_data(block=None, n_chidx=1, n_units=1):
         chidx.block = block
         block.channel_indexes.append(chidx)
 
-    for chidx in block.channel_indexes:
+    for chid, chidx in enumerate(block.channel_indexes):
         for id in range(n_units):
-            unit = Unit(unit_id=id)
+            unit = Unit(unit_id=id, channel_id=chid)
             chidx.units.append(unit)
             unit.channel_index = chidx
 
@@ -33,7 +33,7 @@ def default_data(block=None, n_chidx=1, n_units=1):
                                 t_start=0 * pq.s,
                                 t_stop=st_id * pq.s, spiketrain_id=st_id)
                 unit.spiketrains.append(st)
-                block.segments[0].append(st)
+                block.segments[0].spiketrains.append(st)
                 st.unit = unit
                 st.segment = block.segments[0]
 
@@ -92,6 +92,50 @@ class SpikeSaveLoadTestCase(unittest.TestCase):
                                                   new_objs[id].times)
 
 
+
+class SpikeSaveLoadComplexTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.block = default_data(n_chidx=3,
+                                  n_units=4)
+
+        sorting_file = 'testdata'
+        if os.path.exists(sorting_file + '_spikesorting.hdf5'):
+            os.remove(sorting_file + '_spikesorting.hdf5')
+
+        self.sorting_hash = self.block.channel_indexes[2].annotations[
+            'sorting_hash']
+
+        save_spikesorting(sorting_file, self.block,
+                          sorting_hash=self.sorting_hash)
+
+        self.new_block = Block(type='loaded block')
+        load_spikesorting(self.new_block, sorting_file='testdata',
+                          sorting_hash=self.sorting_hash)
+
+        self.object_classes = ['ChannelIndex', 'Unit', 'SpikeTrain', 'Segment',
+                               'AnalogSignal']
+
+    def test_data_exist(self):
+        for obj_class in self.object_classes:
+            old_objs = self.block.channel_indexes[2].list_children_by_class(
+                obj_class)
+            new_objs = self.new_block.channel_indexes[0].list_children_by_class(
+                obj_class)
+            self.assertEqual(len(old_objs), len(new_objs), obj_class)
+
+    def test_for_data(self):
+        # This test will fail until neuralensemble issue #410 is solved
+        for obj_class in self.object_classes:
+            old_objs = self.block.list_children_by_class(obj_class)
+            new_objs = self.new_block.list_children_by_class(obj_class)
+            for id in range(len(old_objs)):
+                if hasattr(old_objs[id], 'index'):
+                    np.testing.assert_array_equal(old_objs[id].index,
+                                                  new_objs[id].index)
+                if hasattr(old_objs[id], 'times'):
+                    np.testing.assert_array_equal(old_objs[id].times,
+                                                  new_objs[id].times)
 
 
     #

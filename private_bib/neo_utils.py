@@ -526,6 +526,10 @@ def seg_time_slice(seg, t_start=None, t_stop=None, reset_time=False, **kwargs):
     seg: Neo Segment
         Temporal slice of the original Neo Segment from t_start to t_stop.
     """
+
+    # TODO: This function only takes care of the
+    # Block->Segment->Spiketrain / AnalogSignal / Event / Epoch part of a neo
+    #  structure. ChannelIndexes and Units are not considered yet.
     subseg = neo.Segment(**kwargs)
 
     for attr in [

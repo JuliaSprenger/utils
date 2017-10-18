@@ -262,7 +262,6 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
     elif len(sorted_chidx)==1:
         sorted_chidx = sorted_chidx[0]
     else:
-        #TODO: Problem: this reduced spiketrains to quantities
         sorted_chidx = copy.deepcopy(nix_sorted_chidx)
         sorted_chidx.units = []
         sorted_chidx.block = block
@@ -294,7 +293,8 @@ def load_spikesorting(block, sorting_file, parameter_dict=None,
 
                 ############ Fix for issue
                 # https://github.com/NeuralEnsemble/python-neo/issues/373
-                if duplicated_st.waveforms.shape == (0,):
+                if (hasattr(duplicated_st.waveforms, 'shape') and
+                            duplicated_st.waveforms.shape == (0,)):
                     duplicated_st.waveforms = \
                         duplicated_st.waveforms.reshape((0,0,0))
                 ################
