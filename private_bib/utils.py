@@ -15,7 +15,7 @@ import glob
 # # if os.path.isdir('/home/julia/projects'):
 # #     local = 'laptop'
 # # el
-# if os.path.isdir('/mnt/Transcend/Datasets'):
+# if os.path.isdir('/mnt/Seagate/Datasets'):
 #     local = 'disc'
 # elif os.path.isdir('/home/julia/'):
 #     local = 'laptop'
@@ -35,12 +35,12 @@ paths = {'laptop':{'hamburg':{'data':'/home/julia/data/SPP/data',
                    'marseille':{'data':'/home/julia/data/marseille/ReachGrasp',
                                 'metadata':'/home/julia/data/marseille/ReachGrasp'},
                    'result':'/home/julia/projects/SPP1665/analysis'},
-         'disc':{  'hamburg':{'data':'/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/data',
-                              'metadata':'/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/metadata',
+         'disc':{  'hamburg':{'data':'/mnt/Seagate/Datasets/SPP1665/Data/devel-circuits/data',
+                              'metadata':'/mnt/Seagate/Datasets/SPP1665/Data/devel-circuits/metadata',
                               'cache': '/home/julia/cache',
                               'sortdir':'/home/julia/projects/SPP1665/analysis/spikesortings'},  # This is not the best solution as there is also the hambach sorting locally available...
-                   'marseille':{'data':'/mnt/Transcend/Datasets/marseille/ReachGrasp',
-                                'metadata':'/mnt/Transcend/Datasets/marseille/ReachGrasp'},
+                   'marseille':{'data':'/mnt/Seagate/Datasets/marseille/ReachGrasp',
+                                'metadata':'/mnt/Seagate/Datasets/marseille/ReachGrasp'},
                    'result':'/home/julia/projects/SPP1665/analysis'},
          'hambach':{'hamburg':{'data':'/datasets/devel-circuits/data/data',
                                'metadata':'/datasets/devel-circuits/data/metadata',
@@ -62,12 +62,12 @@ locs = list(paths)
 # print('Locations {}'.format(locs))
 
 # datapath = {'hamburg':{'laptop':'/home/julia/data/SPP1665/Data/devel-circuits/data',
-#                         'disc':'/mnt/Transcend/Datasets/SPP1665/Data/devel-circuits/data',
+#                         'disc':'/mnt/Seagate/Datasets/SPP1665/Data/devel-circuits/data',
 #                         'hambach':'/datasets/devel-circuits/data/data',
 #                         'blaustein':'/home/j.sprenger/data/SPP/data'},
 #
 #             'marseille':{'laptop':'/home/julia/data/marseille/ReachGrasp',
-#                         'disc':'/mnt/Transcend/Datasets/marseille/ReachGrasp',
+#                         'disc':'/mnt/Seagate/Datasets/marseille/ReachGrasp',
 #                         'hambach':'/datasets/marseille/congloue/data/DataGrasp',
 #                         'blaustein':'/home/j.sprenger/data/marseille/data'}}
 
@@ -127,8 +127,9 @@ def get_cache_location(session):
     return paths[loc][group]['cache'] + refined_path
 
 def get_result_location():
-    loc = _find_loc(group='result')
-    return paths[loc]['result']
+    for loc in locs:
+        if os.path.exists(paths[loc]['result']):
+            return paths[loc]['result']
 
 def get_sort_location(session):
     group = 'hamburg' if spp_struct.match(session) else 'marseille'
